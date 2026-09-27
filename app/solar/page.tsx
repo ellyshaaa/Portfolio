@@ -170,7 +170,7 @@ export default function Page() {
               <text key={h} x={ex(h)} y={EH - 10} textAnchor="middle" fontSize="11" fill="#4A5878">{h}:00</text>
             ))}
             <line x1={EM.l} y1={ey(0)} x2={EW - EM.r} y2={ey(0)} stroke="#1E2A44" />
-            <text x={EM.l - 8} y={ey(peak) + 4} textAnchor="end" fontSize="11" fill="#4A5878">{peak.toFixed(0)} W/m²</text>
+                        <text x={EM.l} y={EM.t + 4} textAnchor="start" fontSize="11" fill="#4A5878">{peak.toFixed(0)} W/m²</text>
             <path d={line("fixed")} fill="none" stroke="#4A5878" strokeWidth="2" />
             <path d={line("tracked")} fill="none" stroke="#FFB020" strokeWidth="2.5" />
             <line x1={ex(hour)} y1={EM.t} x2={ex(hour)} y2={EH - EM.b} stroke="#E8EDF7" strokeOpacity="0.3" strokeDasharray="4 4" />
@@ -183,6 +183,11 @@ export default function Page() {
 
         <section className="mt-16 border-t border-white/10 pt-8 text-[#9AA9C2]">
           <h2 className="text-xs uppercase tracking-widest text-[#7C8BA5]">How it works</h2>
+                    <p className="mt-4 max-w-2xl leading-relaxed">
+            One caveat worth stating: this model counts direct beam irradiance only. Real installations also collect
+            diffuse sky radiation, which is largely angle-independent and so lifts the fixed panel&apos;s baseline. Published
+            field results for dual-axis tracking sit nearer 30–40%; the figure above is the clear-sky direct-only upper bound.
+          </p>
           <p className="mt-4 max-w-2xl leading-relaxed">
             Solar declination and the equation of time come from Spencer&apos;s Fourier series, which together give true
             solar time at any longitude. From there the hour angle yields the sun&apos;s elevation and azimuth. The panel&apos;s
@@ -191,7 +196,7 @@ export default function Page() {
           </p>
           <p className="mt-4 max-w-2xl leading-relaxed">
             Everything above runs in your browser with no network calls. Try Reykjavík in December against Nairobi in
-            March — the further from the equator, the more a tracker earns its cost.
+            March , the further from the equator, the more a tracker earns its cost.
           </p>
         </section>
              <Trainer site={site} day={day} hour={hour} />

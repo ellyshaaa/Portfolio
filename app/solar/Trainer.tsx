@@ -24,12 +24,15 @@ export default function Trainer({ site, day, hour }: { site: Site; day: number; 
       if (!net) return;
 
       let last = 0;
-      for (let i = 0; i < STEPS_PER_TICK; i++) {
-        last = trainStep(net, makeBatch(randRef.current, 48, 0.4), 0.02);
-      }
-
-      setLosses((prev) => [...prev, last]);
       setStep((s) => {
+        for (let i = 0; i < STEPS_PER_TICK; i++) {
+          // Decay the learning rate so the late steps settle instead of bouncing.
+          const progress = (s + i) / TOTAL_STEPS;
+          const lr = 0.02 * (1 - 0.95 * progress);
+          last = trainStep(net, makeBatch(randRef.current, 48, 0.4), lr);
+        }
+        setLosses((prev) => [...prev, last]);
+
         const next = s + STEPS_PER_TICK;
         if (next >= TOTAL_STEPS) {
           setRunning(false);
@@ -60,9 +63,11 @@ export default function Trainer({ site, day, hour }: { site: Site; day: number; 
   const logs = losses.map((l) => Math.log10(Math.max(l, 1e-6)));
   const hi = logs.length ? Math.max(...logs) : 0;
   const lo = logs.length ? Math.min(...logs) : -4;
-  const lx = (i: number) => M.l + (i / Math.max(1, TOTAL_STEPS / STEPS_PER_TICK - 1)) * (W - M.l - M.r);
-  const ly = (v: number) => H - M.b - ((v - lo) / Math.max(1e-6, hi - lo)) * (H - M.t - M.b);
-  const curve = logs.map((v, i) => `${i === 0 ? "M" : "L"}${lx(i).toFixed(1)},${ly(v).toFixed(1)}`).join(" ");
+  const lx = (i: number) =>
+    Math.round((M.l + (i / Math.max(1, TOTAL_STEPS / STEPS_PER_TICK - 1)) * (W - M.l - M.r)) * 100) / 100;
+  const ly = (v: number) =>
+    Math.round((H - M.b - ((v - lo) / Math.max(1e-6, hi - lo)) * (H - M.t - M.b)) * 100) / 100;
+  const curve = logs.map((v, i) => `${i === 0 ? "M" : "L"}${lx(i)},${ly(v)}`).join(" ");
 
   const card = "rounded-2xl border border-white/10 bg-white/[0.03] p-5";
 
@@ -72,7 +77,7 @@ export default function Trainer({ site, day, hour }: { site: Site; day: number; 
         Learned controller · trains in your browser
       </h2>
       <p className="mt-4 max-w-2xl leading-relaxed text-[#9AA9C2]">
-        The analytic model above is exact, but it costs trig and a Fourier series on every update — awkward on a
+        The analytic model above is exact, but it costs trig and a Fourier series on every update , awkward on a
         microcontroller with no floating-point unit. So here a {PARAM_COUNT}-parameter neural network is distilled from
         it, trained on noisy readings to see whether it can recover the true physics. Nothing is precomputed; it trains
         live when you press the button.
@@ -87,7 +92,7 @@ export default function Trainer({ site, day, hour }: { site: Site; day: number; 
           {running ? "Training..." : trained ? "Retrain from scratch" : "Train the model"}
         </button>
         <span className="text-sm text-[#7C8BA5]">
-          {step} / {TOTAL_STEPS} steps · Adam · batch 48 · MSE
+          {step} / {TOTAL_STEPS} steps · Adam · batch 48 · decaying LR
         </span>
       </div>
 
@@ -123,7 +128,7 @@ export default function Trainer({ site, day, hour }: { site: Site; day: number; 
           </div>
           <div className={card}>
             <p className="text-xs uppercase tracking-widest text-[#7C8BA5]">Model size</p>
-            <p className={`${serif} mt-2 text-4xl`}>{(PARAM_COUNT * 4) / 1024 < 2 ? `${PARAM_COUNT * 4} B` : `${((PARAM_COUNT * 4) / 1024).toFixed(1)} KB`}</p>
+            <p className={`${serif} mt-2 text-4xl`}>{PARAM_COUNT * 4} B</p>
             <p className="mt-1 text-sm text-[#7C8BA5]">{PARAM_COUNT} float32 parameters</p>
           </div>
         </div>
@@ -131,9 +136,7 @@ export default function Trainer({ site, day, hour }: { site: Site; day: number; 
 
       {guess && (
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs uppercase tracking-widest text-[#7C8BA5]">
-            At the moment selected above
-          </p>
+          <p className="text-xs uppercase tracking-widest text-[#7C8BA5]">At the moment selected above</p>
           <div className="mt-4 grid gap-6 sm:grid-cols-2">
             <div>
               <p className="text-sm text-[#7C8BA5]">Analytic (ground truth)</p>
@@ -159,6 +162,12 @@ export default function Trainer({ site, day, hour }: { site: Site; day: number; 
         discontinuity at midnight or at New Year. And azimuth is predicted as a sine and cosine rather than an angle,
         which avoids the model being punished for the jump between 359° and 1°. Without those, the same architecture
         stalls around 20° of error.
+      </p>
+      <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#7C8BA5]">
+        Where it is weakest: near sunrise and sunset. An earlier version trained only above 5° elevation and drifted
+        by 6° or more at dawn, because it was extrapolating outside its training range. Sampling down to −5° fixed
+        that. Accuracy is still lowest at shallow angles, which is tolerable here since a panel captures little energy
+        with the sun on the horizon.
       </p>
     </section>
   );

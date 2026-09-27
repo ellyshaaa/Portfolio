@@ -80,7 +80,11 @@ export function predict(net: Net, site: Site, day: number, hour: number) {
 
 export type Row = { x: number[]; y: number[] };
 
-/** Sample daylight moments. Noise simulates imperfect field readings. */
+/**
+ * Sample moments from just below the horizon upward.
+ * Training down to -5° stops the model extrapolating badly near sunrise and sunset,
+ * which is exactly where a tracker still has to know which way to point.
+ */
 export function makeBatch(rand: () => number, n: number, noiseDeg = 0): Row[] {
   const rows: Row[] = [];
   while (rows.length < n) {
@@ -88,7 +92,7 @@ export function makeBatch(rand: () => number, n: number, noiseDeg = 0): Row[] {
     const day = 1 + Math.floor(rand() * 365);
     const hour = rand() * 24;
     const sun = sunPosition(site, day, hour);
-    if (sun.elevation <= 5) continue; // panels are parked at night
+    if (sun.elevation <= -5) continue;
 
     const el = sun.elevation + (noiseDeg ? gauss(rand) * noiseDeg : 0);
     const az = sun.azimuth + (noiseDeg ? gauss(rand) * noiseDeg : 0);
@@ -157,7 +161,7 @@ export function trainStep(net: Net, batch: Row[], lr = 0.01): number {
   return loss / (N * 3);
 }
 
-/** Mean absolute error in degrees against the noiseless analytic model. */
+/** Mean absolute error in degrees against the noiseless analytic model, across all daylight. */
 export function evaluate(net: Net, seed = 999, n = 400) {
   const rand = rng(seed);
   let elErr = 0, azErr = 0, count = 0;
@@ -167,7 +171,7 @@ export function evaluate(net: Net, seed = 999, n = 400) {
     const day = 1 + Math.floor(rand() * 365);
     const hour = rand() * 24;
     const truth = sunPosition(site, day, hour);
-    if (truth.elevation <= 5) continue;
+    if (truth.elevation <= 0) continue;
 
     const p = predict(net, site, day, hour);
     elErr += Math.abs(p.elevation - truth.elevation);
