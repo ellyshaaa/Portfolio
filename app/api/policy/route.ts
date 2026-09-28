@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-
+import { rateLimit, clean } from "../guard";
 const MODELS = ["gemini-3.6-flash", "gemini-3.8-flash"];
 
 export async function POST(req: Request) {
   try {
+           if (!rateLimit(req, 20)) {
+      return NextResponse.json({ text: "" });
+    }
     const { domain, tier, rationale, controls } = await req.json();
 
     const prompt = `Write one paragraph of policy language for an organization's AI usage policy, then a short bulleted list of the obligations.

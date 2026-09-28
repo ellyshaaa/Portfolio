@@ -1,3 +1,4 @@
+import { rateLimit, clean } from "../guard";
 import { NextResponse } from "next/server";
 import { SAMPLE_STORY } from "./sample";
 
@@ -7,6 +8,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function POST(req: Request) {
   try {
+        if (!rateLimit(req)) {
+      return NextResponse.json({ ...SAMPLE_STORY, isSample: true });
+    }
     const { age, topic, name } = await req.json();
 
     if (!age || !topic) {
@@ -14,8 +18,8 @@ export async function POST(req: Request) {
     }
 
     const ageNum = Math.min(Math.max(Number(age), 3), 10);
-    const safeTopic = String(topic).slice(0, 100);
-    const safeName = name ? String(name).slice(0, 30) : "";
+        const safeTopic = clean(topic, 100);
+    const safeName = clean(name, 30);
 
     const system = `You are an award-winning picture book author. You write warm, funny, vivid stories for young children, like the best books on a library shelf.
 Style rules:

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-
+import { rateLimit, clean } from "../guard";
 const IMAGE_MODELS = ["gemini-3-pro-image", "gemini-2.5-flash-image"];
 
 export async function POST(req: Request) {
   try {
+        if (!rateLimit(req, 20)) {
+      return NextResponse.json({ error: "Too many requests." }, { status: 429 });
+    }
     const { character, scene } = await req.json();
 
     if (!scene) {
