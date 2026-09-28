@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     "AI engineer building systems people outside engineering can actually use. Three live tools you can try.",
   openGraph: {
     title: "Ellysha Fatima — AI Engineer",
-    description:
-      "Three live AI tools: a storybook generator, an EU AI Act risk classifier, and a solar tracker with a neural net that trains in your browser.",
+        description:
+      "Three live AI tools you can try: a storybook generator, an EU AI Act risk classifier, and a browser-trained solar tracker.",
     url: "https://ellyshafatima.com",
     siteName: "Ellysha Fatima",
     type: "website",
