@@ -16,7 +16,7 @@ const projects = [
   {
     href: "/solar",
     title: "Sensor-Free Solar Tracker",
-    line: "Predicts optimal panel angles from location and time alone — no hardware sensors required.",
+    line: "Computes panel angles from astronomy alone, then distills the physics into a 1.7 KB neural net that trains in your browser.",
     tag: "ML · Simulation · Energy",
   },
 ];
